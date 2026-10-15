@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鸡鸣三省 · 石厢子问答小游戏</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='8' width='48' height='48' rx='10' fill='%23b23a2e'/%3E%3Ctext x='32' y='42' font-size='34' text-anchor='middle' fill='%23f3e6d0' font-family='serif'%3E问%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --ink:#f3e6d0;
+    --dim:#cbb392;
+    --paper:#2b1616;
+    --paper2:#3a1f1c;
+    --gold:#e0b87a;
+    --gold-dim:#c9a057;
+    --flag:#b23a2e;
+    --ok:#4a7a52;
+    --err:#a23a32;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    background:
+      radial-gradient(circle at 50% 0%, #3f2320 0%, var(--paper) 55%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;
+  }
+  .wrap{width:100%;max-width:460px;position:relative;}
+
+  /* 印章装饰 */
+  .seal{
+    width:74px;height:74px;border-radius:50%;
+    border:2px solid var(--gold-dim);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 14px;color:var(--gold);
+  }
+  .seal svg{width:44px;height:44px;}
+
+  /* 视图切换 */
+  .view{display:none;}
+  .view.on{display:block;}
+
+  /* 首页 */
+  .home{text-align:center;}
+  .kicker{letter-spacing:6px;font-size:13px;color:var(--gold-dim);margin-bottom:8px;}
+  h1{font-size:30px;letter-spacing:3px;color:var(--ink);font-weight:700;line-height:1.35;}
+  .home p.intro{font-size:15px;color:var(--dim);line-height:1.8;margin:16px 4px 24px;}
+  .btn{
+    display:inline-block;width:100%;max-width:280px;
+    padding:15px 0;border-radius:8px;border:1px solid var(--flag);
+    background:var(--flag);color:#fbe7c9;font-size:17px;font-weight:700;
+    letter-spacing:2px;font-family:inherit;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.3);
+  }
+  .btn.ghost{background:transparent;border-color:var(--gold-dim);color:var(--gold);}
+  .meta{font-size:12.5px;color:var(--dim);margin-top:20px;}
+
+  /* 答题页 */
+  .quiz{}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .qcount{font-size:13px;color:var(--gold);letter-spacing:1px;}
+  .bar{height:3px;background:rgba(243,230,208,.18);border-radius:2px;overflow:hidden;margin-bottom:26px;}
+  .bar i{display:block;height:100%;background:var(--gold);transition:width .3s;}
+  .qtitle{font-size:15px;color:var(--dim);letter-spacing:1px;margin-bottom:10px;}
+  .qtext{font-size:22px;line-height:1.6;font-weight:700;margin-bottom:26px;}
+  .opts{display:flex;flex-direction:column;gap:12px;}
+  .opt{
+    text-align:left;width:100%;padding:15px 18px;border-radius:8px;
+    background:var(--paper2);border:1px solid rgba(243,230,208,.22);
+    color:var(--ink);font-size:16px;line-height:1.5;font-family:inherit;cursor:pointer;
+    transition:background .2s,border-color .2s;
+  }
+  .opt:active{transform:scale(.99);}
+  .opt.correct{background:var(--ok);border-color:var(--ok);color:#eef6ee;}
+  .opt.wrong{background:var(--err);border-color:var(--err);color:#fbeaea;}
+  .opt:disabled{cursor:default;}
+  .note{
+    margin-top:16px;padding:14px 16px;border-left:3px solid var(--gold);
+    background:rgba(224,184,122,.10);border-radius:0 6px 6px 0;
+    font-size:14px;color:var(--dim);line-height:1.8;display:none;
+  }
+  .note.on{display:block;}
+  .next{
+    margin-top:18px;width:100%;max-width:280px;display:none;
+    padding:13px 0;border-radius:8px;border:1px solid var(--flag);
+    background:var(--flag);color:#fbe7c9;font-size:16px;font-weight:700;
+    letter-spacing:2px;font-family:inherit;cursor:pointer;
+  }
+  .next.on{display:block;}
+
+  /* 结果页 */
+  .result{text-align:center;}
+  .rscore{font-size:60px;font-weight:900;color:var(--gold);line-height:1;margin:6px 0 4px;}
+  .rscore span{font-size:22px;color:var(--dim);font-weight:400;}
+  .rtitle{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+  .rsub{font-size:14px;color:var(--dim);line-height:1.8;margin-bottom:26px;}
+  .quote{font-size:13px;color:var(--gold-dim);line-height:1.9;margin-bottom:26px;font-style:normal;}
+  .actions{display:flex;flex-direction:column;gap:12px;align-items:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 首页 ===== -->
+  <section class="view home" id="v-home">
+    <div class="seal" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12a7 7 0 1 1 14 0 7 7 0 0 1-14 0Z"/><path d="M9 12h6M12 9v6"/></svg>
+    </div>
+    <div class="kicker">鸡 鸣 三 省 · 石 厢 子</div>
+    <h1>红色展馆<br>问答小游戏</h1>
+    <p class="intro">十道题，考一考你对这段历史的了解。从序厅一路答题，看看你到了哪个"军衔"。</p>
+    <button class="btn" id="btn-start">开始答题</button>
+    <div class="meta">共 10 题 · 全部答完即出成绩</div>
+  </section>
+
+  <!-- ===== 答题页 ===== -->
+  <section class="view quiz" id="v-quiz">
+    <div class="top">
+      <span class="qcount" id="qcount"></span>
+      <span style="font-size:12px;color:var(--dim);" id="qscore"></span>
+    </div>
+    <div class="bar"><i id="qbar"></i></div>
+    <div class="qtitle" id="qtitle"></div>
+    <div class="qtext" id="qtext"></div>
+    <div class="opts" id="opts"></div>
+    <div class="note" id="note"></div>
+    <button class="next" id="btn-next">下一题</button>
+  </section>
+
+  <!-- ===== 结果页 ===== -->
+  <section class="view result" id="v-result">
+    <div class="kicker">答 题 完 成</div>
+    <div class="rscore" id="rscore"></div>
+    <div class="rtitle" id="rtitle"></div>
+    <div class="rsub" id="rsub"></div>
+    <p class="quote" id="rquote"></p>
+    <div class="actions">
+      <button class="btn" id="btn-replay">再答一遍</button>
+      <button class="btn ghost" id="btn-home">返回首页</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var QUIZ=[
+    {q:"石厢子会议还有一个更广为人知的称呼，是什么？",opts:["鸡鸣三省会议","遵义会议","扎西会议","苟坝会议"],a:0,note:"1935年2月，中央政治局在川滇黔交界“鸡鸣三省”的石厢子召开会议，故又称“鸡鸣三省会议”。"},
+    {q:"这次会议大约召开于哪一年哪个月？",opts:["1934年12月","1935年2月","1935年5月","1936年1月"],a:1,note:"1935年2月3日除夕红军进驻石厢子，2月5日中央政治局在此召开会议。"},
+    {q:"会上由谁接替博古，在党内负总责？",opts:["毛泽东","周恩来","张闻天（洛甫）","朱德"],a:2,note:"会议决定张闻天接替博古负总责，毛泽东为周恩来军事指挥上的帮助者，史称“博古交权”。"},
+    {q:"“鸡鸣三省”这个地名，是怎么来的？",opts:["三省交界，鸡叫三省皆闻","当地盛产雄鸡","三省共修一座钟楼","古代县名就叫三鸡"],a:0,note:"石厢子地处川、滇、黔三省交界、赤水河畔，雄鸡报晓，三省皆闻，故称“鸡鸣三省”。"},
+    {q:"博古交出的、象征党的领导权的，是什么？",opts:["配枪","公文包","马灯","中央印章与挑子"],a:3,note:"博古把中央委员会印章、书记处印章及一副装着文件的挑子，交给了张闻天，完成权力交接。"},
+    {q:"“三个铜板”的故事里，铜板是留给谁的？",opts:["房东肖有恩","一位红军战士","当地儿童团","游击队队长"],a:0,note:"1935年除夕，毛泽东等借宿村民肖有恩家，临走留下三枚铜板作食宿费，成为军民鱼水情的见证。"},
+    {q:"石厢子位于哪个县？",opts:["贵州毕节","四川叙永县","云南镇雄","四川古蔺"],a:1,note:"石厢子属四川省泸州市叙永县石厢子彝族乡，地处三省交界。"},
+    {q:"四渡赤水，主要是在谁的指挥下完成的？",opts:["张闻天","博古","毛泽东","王稼祥"],a:2,note:"石厢子会议确立毛泽东在党和红军中的领导地位，四渡赤水正是毛泽东军事指挥的“得意之笔”。"},
+    {q:"川南游击纵队留下的主要任务是什么？",opts:["留守川滇黔边区牵制敌人、掩护主力","建立大兵工厂","立即北上陕北","占领中心城市"],a:0,note:"纵队留守边区20余县开展游击、牵制强敌，用自我牺牲换主力跳出包围圈、长征北上。"},
+    {q:"石厢子会议在历史上的地位是？",opts:["遵义会议的延续与收尾","另一次独立会议","一次普通休整","一次失败的会议"],a:0,note:"它完成遵义会议未尽的分工，从组织上纠正“左”倾路线，事实上确立毛泽东的领导地位，党从此独立自主走向成熟。"}
+  ];
+
+  var VIEWS=["v-home","v-quiz","v-result"];
+  var cur=0, score=0, locked=false, finished=false;
+
+  var el={
+    qcount:document.getElementById("qcount"),
+    qscore:document.getElementById("qscore"),
+    qbar:document.getElementById("qbar"),
+    qtitle:document.getElementById("qtitle"),
+    qtext:document.getElementById("qtext"),
+    opts:document.getElementById("opts"),
+    note:document.getElementById("note"),
+    next:document.getElementById("btn-next"),
+    rscore:document.getElementById("rscore"),
+    rtitle:document.getElementById("rtitle"),
+    rsub:document.getElementById("rsub"),
+    rquote:document.getElementById("rquote")
+  };
+
+  function show(name){
+    VIEWS.forEach(function(v){
+      document.getElementById(v).classList.toggle("on", v===name);
+    });
+  }
+
+  function start(){
+    cur=0; score=0; finished=false;
+    renderQuiz();
+    show("v-quiz");
+  }
+
+  function renderQuiz(){
+    locked=false;
+    var q=QUIZ[cur];
+    el.qcount.textContent="第 "+(cur+1)+" / 10 题";
+    el.qscore.textContent="答对 " + score;
+    el.qbar.style.width=((cur)/QUIZ.length*100)+"%";
+    el.qtitle.textContent="——“鸡鸣三省”·石厢子";
+    el.qtext.textContent=q.q;
+    el.note.classList.remove("on");
+    el.note.innerHTML=q.note;
+    el.next.classList.remove("on");
+    el.next.textContent=(cur===QUIZ.length-1)?"看成绩":"下一题";
+    el.opts.innerHTML="";
+    q.opts.forEach(function(opt,idx){
+      var b=document.createElement("button");
+      b.className="opt";
+      b.type="button";
+      b.textContent=(String.fromCharCode(65+idx))+". "+opt;
+      b.addEventListener("click",function(){ answer(idx,b); });
+      el.opts.appendChild(b);
+    });
+  }
+
+  function answer(idx,btn){
+    if(locked) return;
+    locked=true;
+    var q=QUIZ[cur];
+    var btns=el.opts.querySelectorAll(".opt");
+    var ok=q.opts[q.a];
+    if(idx===q.a){
+      score++;
+      btn.classList.add("correct");
+      el.qscore.textContent="答对 " + score;
+    }else{
+      btn.classList.add("wrong");
+      btns[q.a].classList.add("correct");
+    }
+    btns.forEach(function(b){ b.disabled=true; });
+    el.note.classList.add("on");
+    el.next.classList.add("on");
+  }
+
+  function next(){
+    if(cur<QUIZ.length-1){ cur++; renderQuiz(); }
+    else{ finished=true; renderResult(); show("v-result"); }
+  }
+
+  function rank(n){
+    if(n===QUIZ.length) return {t:"长征标兵团",s:"满分！这段历史你记得比多数人还牢。"};
+    if(n>=8) return {t:"红军战士",s:"对这段转折的历史，你掌握得很扎实。"};
+    if(n>=6) return {t:"参观新兵",s:"不错！再多走走这个展馆，你会记得更牢。"};
+    if(n>=4) return {t:"初来乍到",s:"这些题目你都见过，值得再回头看一遍展厅。"};
+    return {t:"请从序厅开始",s:"别灰心，把几个展厅慢慢走一遍，答案都在里面。"};
+  }
+  var QUOTES=[
+    "“雄鸡一唱天下白”——就在那个叫鸡鸣三省的地方。",
+    "一副挑子的交接，让中国革命从此转向。",
+    "他们把自己留在山里，换主力走出了包围圈。",
+    "坚持独立自主，是这次会议留给今天最重要的启示。"
+  ];
+
+  function renderResult(){
+    var r=rank(score);
+    el.rscore.innerHTML=score+"<span> / "+QUIZ.length+"</span>";
+    el.rtitle.textContent=r.t;
+    el.rsub.textContent=r.s;
+    el.rquote.textContent=QUOTES[score===QUIZ.length?0:(score>7?1:(score>5?2:3))];
+  }
+
+  document.getElementById("btn-start").addEventListener("click",start);
+  document.getElementById("btn-replay").addEventListener("click",start);
+  document.getElementById("btn-home").addEventListener("click",function(){ show("v-home"); });
+  el.next.addEventListener("click",next);
+
+  show("v-home");
+})();
+</script>
+</body>
+</html>
